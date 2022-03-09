@@ -1,0 +1,2 @@
+from evolution.EvolutionOptimizer import EvolutionOptimizer
+EvolutionOptimizer.test_fit()
