@@ -12,9 +12,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-    - run: conda update --all
-    - run: conda export --no-builds > environment.yml
-    - run: conda env create -f environment.yml
+    - name: Install dependencies
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        $CONDA/bin/conda env update --file environment.yml --name base
     - name: Run Tests
       run: python3 test.py
     
