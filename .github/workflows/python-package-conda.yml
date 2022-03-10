@@ -12,11 +12,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-    - run: conda update --all
-    - name: Install dependencies
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda env update --file environment.yml --name base
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v2.1.1
     - name: Run Tests
       run: python3 test.py
     
