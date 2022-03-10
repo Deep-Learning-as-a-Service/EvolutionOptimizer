@@ -9,12 +9,17 @@ jobs:
       max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - name: Python Setup
+    - uses: actions/setup-python@v2
       with:
-        python-version: 3.10
-    - name: Setup Conda Env
+        python-version: '3.8.1' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+        architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+
+    - name: Conda Setup
       run: conda env create -f environment.yaml
+      
     - name: Run tests
       run: python3 test.py
