@@ -31,7 +31,7 @@ class DNA():
     def test_new_generation(self, best_individual, second_best_individual):
         print("test_new_generation start")
         for i in range(3):
-            print("generation  ", i + 1, ":")
+            print("generation ", i + 1, ":")
             print("best_individual: ", best_individual)
             print("second_best_individual: ", second_best_individual)
             print_list(self.new_generation(best_individual, second_best_individual))
