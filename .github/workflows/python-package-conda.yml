@@ -1,25 +1,14 @@
-name: Python Package using Conda
+name: Python Package Using Anaconda
 
 on: [push]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 5
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    
-    - name: Python Setup
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
       with:
-        python-version: '3.8.1' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-        architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-
-    - name: Conda Setup
-      run: conda env create -f environment.yaml
-      
-    - name: Run tests
-      run: python3 test.py
+        python-version: 3.8
