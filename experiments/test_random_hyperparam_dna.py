@@ -1,0 +1,2 @@
+from dna.RandomHyperparamDNA import RandomHyperparamDNA
+RandomHyperparamDNA.test()

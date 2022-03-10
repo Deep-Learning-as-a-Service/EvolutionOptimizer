@@ -3,42 +3,42 @@ from utils.utils import print_list, dicts_equal_n_exceptions
 import random
 
 
-class XGBHyperparamDNA(DNA):
+class HyperparamDNA(DNA):
 
     def __init__(self, gen_pool, mutation_rate=0.5):
         super().__init__(gen_pool)
         self.mutation_rate = mutation_rate
         self.slightly_mutation_range = 0.1
 
-    @staticmethod
-    def test():
-        xgb_gen_pool = [
+    @classmethod
+    def test(cls):
+        gen_pool = [
             ("max_depth", "natural", [3, 20]),
             ("n_estimators", "natural", [100, 1000]),
             ("learning_rate", "real", [0.01, 0.4]),
             ("tree_method", "categorical", ["gpu_hist", "gpu_hist_bins", "gpu_approx", "hist", "approx"])
         ]
 
-        xgb_dna = XGBHyperparamDNA(xgb_gen_pool)
-        xgb_dna.test_new_generation(
+        dna = cls(gen_pool)
+        dna.test_new_generation(
             { "max_depth": 15, "n_estimators": 300, "learning_rate": 0.3, "tree_method": "gpu_hist"},
             { "max_depth": 5, "n_estimators": 100, "learning_rate": 0.1, "tree_method": "gpu_hist_bins" }
         )
 
     def new_generation(self, best_individual, second_best_individual) -> list:
         return [
-            (self.__cross_individual(best_individual, second_best_individual), 'cross 1'),
-            (self.__cross_individual(best_individual, second_best_individual), 'cross 2'),
-            (self.__mutate_individual(best_individual), 'mutate best'),
-            (self.__mutate_individual(second_best_individual), 'mutate second best'),
-            (self.__mutate_slightly_individual(best_individual), 'mutate slightly best'),
-            (self.__mutate_slightly_individual(second_best_individual), 'mutate slightly second best'),
-            (self.__random_individual(), 'rand 1'),
-            (self.__random_individual(), 'rand 2')
+            (self._cross_individual(best_individual, second_best_individual), 'cross 1'),
+            (self._cross_individual(best_individual, second_best_individual), 'cross 2'),
+            (self._mutate_individual(best_individual), 'mutate best'),
+            (self._mutate_individual(second_best_individual), 'mutate second best'),
+            (self._mutate_slightly_individual(best_individual), 'mutate slightly best'),
+            (self._mutate_slightly_individual(second_best_individual), 'mutate slightly second best'),
+            (self._random_individual(), 'rand 1'),
+            (self._random_individual(), 'rand 2')
         ]
     
     def two_random_individuals(self):
-        return self.__random_individual(), self.__random_individual(), 'eva rand'
+        return self._random_individual(), self._random_individual(), 'eva rand'
     
     def __random_gene_value(_, gene):
         name, type, range = gene
@@ -69,12 +69,12 @@ class XGBHyperparamDNA(DNA):
         if max_tries == 0:
             raise Exception("Max individual creation attempts (" + str(max_tries_initial) + ") reached")
             # print("WARNING: Max individual creation attempts (" + str(max_tries_initial) + ") reached")
-            # return self.__random_individual()
+            # return self._random_individual()
         return new_individual
     
-    def __mutate_slightly_until(self, should_criteria, individual_1, individual_2):
+    def _mutate_slightly_until(self, should_criteria, individual_1, individual_2):
         
-        new_mutation = lambda: self.__mutate_slightly_individual(individual_2)
+        new_mutation = lambda: self._mutate_slightly_individual(individual_2)
         criteria = lambda: should_criteria(individual_1, individual_2)
         if criteria(): return individual_1, individual_2
         individual_2 = new_mutation()
@@ -84,15 +84,15 @@ class XGBHyperparamDNA(DNA):
         while not criteria() and max_tries > 0:
             individual_2 = new_mutation()
             max_tries -= 1
-        if max_tries == 0: raise Exception("__mutate_until - Max individual creation attempts (" + str(max_tries_initial) + ") reached") # warning go random before you do that!
+        if max_tries == 0: raise Exception("_mutate_until - Max individual creation attempts (" + str(max_tries_initial) + ") reached") # warning go random before you do that!
         
         return individual_1, individual_2
 
     
-    def __random_individual(self):
+    def _random_individual(self):
         return self.__individual_from_func(self.__random_gene_value)
     
-    def __cross_individual(self, individual_1, individual_2):
+    def _cross_individual(self, individual_1, individual_2):
         """
         if you cross individuals, that will be in the new generation, this could generate duplicates, so here a protection against that
         - consider a random value in parents range for natural and real values
@@ -100,16 +100,16 @@ class XGBHyperparamDNA(DNA):
         # input individuals, need to be "different enough" to create useful crossing, that add value to the diversity
         diversity_criteria = lambda individual_1, individual_2: not dicts_equal_n_exceptions(individual_1, individual_2, n_exceptions = 1)
         if not diversity_criteria(individual_1, individual_2): 
-            individual_1, individual_2 = self.__mutate_slightly_until(diversity_criteria, individual_1, individual_2)
+            individual_1, individual_2 = self._mutate_slightly_until(diversity_criteria, individual_1, individual_2)
         
         creation_func = lambda: self.__individual_from_func(lambda gene: individual_1[gene[0]] if random.random() > 0.5 else individual_2[gene[0]])
         return self.__duplicate_protection(creation_func, [individual_1, individual_2])
 
-    def __mutate_individual(self, individual):
+    def _mutate_individual(self, individual):
         creation_func = lambda: self.__individual_from_func(lambda gene: self.__random_gene_value(gene) if random.random() < self.mutation_rate else individual[gene[0]])
         return self.__duplicate_protection(creation_func, [individual])
 
-    def __mutate_slightly_individual(self, individual):
+    def _mutate_slightly_individual(self, individual):
         def new_gene_value(gene):
             name, type, range = gene
             if random.random() < self.mutation_rate:

@@ -5,7 +5,8 @@ from utils.utils import print_list
 import time
 import json
 from utils.telegram import send_telegram
-from dna.XGBHyperparamDNA import XGBHyperparamDNA
+from dna.HyperparamDNA import HyperparamDNA
+from lib.test_fitness_func import create_test_fitness_func
 
 class EvolutionOptimizer():
     def __init__(self, new_generation, fitness, verbose=True, log_func=print):
@@ -161,7 +162,12 @@ class EvolutionOptimizer():
             ("tree_method", "categorical", ["gpu_hist", "gpu_hist_bins", "gpu_approx", "hist", "approx"])
         ]
 
-        xgb_dna = XGBHyperparamDNA(gen_pool)
+        initial_individuals = [
+            {'max_depth': 10, 'n_estimators': 10, 'learning_rate': 0.4, 'tree_method': 'approx'},
+            {'max_depth': 0, 'n_estimators': 10, 'learning_rate': 0.4, 'tree_method': 'gpu_hist_bins'}
+        ]
+
+        dna = HyperparamDNA(gen_pool)
 
         def log_func(*args, **kwargs):
             print(*args, **kwargs)
@@ -170,49 +176,9 @@ class EvolutionOptimizer():
             #     send_telegram(msg)
 
 
-        def fitness(individual):
-            fitness = -20 # sigmoid between -6 and 6
-
-            # learning_rate
-            optimal_learning_rate = 0.1253875
-            distance = abs(optimal_learning_rate - individual['learning_rate'])
-            fitness += ((1 - distance)**5)*8 # can come to +6 -> 0 -> simoid 50 percent
-            
-            # n_estimators
-            optimal_n_estimators = 100
-            max_distance = 100
-            distance = abs(optimal_n_estimators - individual['n_estimators']) # between 0 and 100
-            fitness += 6 * (distance / max_distance) # can get max 3 improvement
-
-            # max_depth
-            optimal_max_depth = 5
-            max_distance = 15
-            distance = abs(optimal_max_depth - individual['max_depth']) # between 0 and 15
-            fitness += 6 * (distance / max_distance) # can get max 3 improvement
-
-            # tree_method
-            if individual['tree_method'] == 'gpu_hist':
-                fitness += 2
-            elif individual['tree_method'] == 'gpu_hist_bins':
-                fitness += 1.5
-            elif individual['tree_method'] == 'gpu_approx':
-                fitness += 1
-            elif individual['tree_method'] == 'hist':
-                fitness += 0.5
-            elif individual['tree_method'] == 'approx':
-                fitness += 0.25
-
-            time.sleep(0.1)
-            sigmoid = lambda x: 1 / (1 + np.exp(-x))
-            return sigmoid(fitness)
-
-        evo_optimizer = EvolutionOptimizer(xgb_dna.new_generation, fitness, log_func=log_func)
-
-        initial_individuals = [
-            {'max_depth': 10, 'n_estimators': 10, 'learning_rate': 0.4, 'tree_method': 'approx'},
-            {'max_depth': 0, 'n_estimators': 10, 'learning_rate': 0.4, 'tree_method': 'gpu_hist_bins'}
-        ]
+        fitness = create_test_fitness_func(seconds_latency=0.1, optimal_n_estimators=100, optimal_learning_rate=0.1253875, optimal_max_depth=5, optimal_tree_method='gpu_hist')
+        evo_optimizer = EvolutionOptimizer(dna.new_generation, fitness, log_func=log_func)
 
         best_individual_f_n, best_individual_f_n_history = evo_optimizer.fit(initial_individuals[0], initial_individuals[1], n_generations=10)
         return best_individual_f_n, best_individual_f_n_history
-            
+    

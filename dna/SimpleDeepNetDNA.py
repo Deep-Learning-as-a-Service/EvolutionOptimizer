@@ -45,22 +45,22 @@ class SimpleDeepNetDNA(DNA):
             'units': [0, 32], # n_neurons_per_layer_range
         }
 
-        xgb_dna = SimpleDeepNetDNA(gen_pool)
-        xgb_dna.test_new_generation(
+        dna = SimpleDeepNetDNA(gen_pool)
+        dna.test_new_generation(
             [8, 12, 32, 5],
             [5, 5],
         )
 
     def new_generation(self, best_individual, second_best_individual) -> list:
         return [
-            (self.__cross_individual(best_individual, second_best_individual), 'cross 1'),
-            (self.__cross_individual(best_individual, second_best_individual), 'cross 2'),
+            (self._cross_individual(best_individual, second_best_individual), 'cross 1'),
+            (self._cross_individual(best_individual, second_best_individual), 'cross 2'),
             (self.__cross_between_individual(best_individual, second_best_individual), 'cross between 1'),
             (self.__cross_between_individual(best_individual, second_best_individual), 'cross between 2'),
-            (self.__mutate_individual(best_individual), 'mutate best'),
-            (self.__mutate_individual(second_best_individual), 'mutate second best'),
-            (self.__random_individual(), 'rand 1'),
-            (self.__random_individual(), 'rand 2')
+            (self._mutate_individual(best_individual), 'mutate best'),
+            (self._mutate_individual(second_best_individual), 'mutate second best'),
+            (self._random_individual(), 'rand 1'),
+            (self._random_individual(), 'rand 2')
         ]
     
     def __random_int_range(self, range):
@@ -72,12 +72,12 @@ class SimpleDeepNetDNA(DNA):
             return random.randint(range[1], range[0])
 
 
-    def __random_individual(self):
+    def _random_individual(self):
         n_layers = self.__random_int_range(self.gen_pool['n_layers_range'])
         return [random.randint(0, 32) for _ in range(n_layers)]
     
     def get_random_individuals(self, n_individuals):
-        return [self.__random_individual() for _ in range(n_individuals)]
+        return [self._random_individual() for _ in range(n_individuals)]
     
     def __duplicate_protection(self, creation_func, individuals, max_tries=100):
         max_tries_initial = max_tries
@@ -88,12 +88,12 @@ class SimpleDeepNetDNA(DNA):
         if max_tries == 0:
             raise Exception("Max individual creation attempts (" + str(max_tries_initial) + ") reached")
             # print("WARNING: Max individual creation attempts (" + str(max_tries_initial) + ") reached")
-            # return self.__random_individual()
+            # return self._random_individual()
         return new_individual
     
     def __mutate_until(self, should_criteria, individual_1, individual_2):
         
-        new_mutation = lambda: self.__mutate_individual(individual_2)
+        new_mutation = lambda: self._mutate_individual(individual_2)
         criteria = lambda: should_criteria(individual_1, individual_2)
         if criteria(): return individual_1, individual_2
         individual_2 = new_mutation()
@@ -116,14 +116,14 @@ class SimpleDeepNetDNA(DNA):
             return [self.__random_int_range(units_range) for _ in range(n_layers)]
         return self.__duplicate_protection(creation_func, [individual1, individual2])
     
-    def __cross_individual(self, individual1, individual2):
+    def _cross_individual(self, individual1, individual2):
         individual1, individual2 = self.__mutate_until(lambda i1, i2: i1 != i2, individual1, individual2)
         def creation_func():
             n_layers = self.__random_int_range([len(individual1), len(individual2)])
             return [random.choice(individual1 + individual2) for _ in range(n_layers)]
         return self.__duplicate_protection(creation_func, [individual1, individual2])
     
-    def __mutate_individual(self, individual):
+    def _mutate_individual(self, individual):
         def creation_func():
             max_change_value = int(self.__max_mutation_intensity * (self.gen_pool['units'][1] - self.gen_pool['units'][0]))
             new_individual = []
